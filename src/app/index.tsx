@@ -1,9 +1,15 @@
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import * as DocumentPicker from "expo-document-picker";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function Index() {
-  const [song, setSong] = useState<string | null>(null);
+  const [song, setSong] = useState<{
+    name: string;
+    uri: string;
+  } | null>(null);
+  const player = useAudioPlayer();
+  const status = useAudioPlayerStatus(player);
   const addMusic = async () => {
     const result = await DocumentPicker.getDocumentAsync({
       type: "audio/*",
@@ -14,7 +20,11 @@ export default function Index() {
     }
     const selectedSong = result.assets[0];
 
-    setSong(selectedSong.name);
+    setSong({
+      name: selectedSong.name,
+      uri: selectedSong.uri,
+    });
+    player.replace(selectedSong.uri);
   };
 
   return (
@@ -35,7 +45,25 @@ export default function Index() {
 
       {/* Empty Music Area */}
       <View style={styles.emptyMusic}>
-        <Text style={styles.emptyTitle}>{song ? song : "No music yet"}</Text>
+        <Text style={styles.emptyTitle}>
+          {song ? song.name : "No music yet"}
+        </Text>
+
+        {song && (
+          <Pressable
+            onPress={() => {
+              if (status.playing) {
+                player.pause();
+              } else {
+                player.play();
+              }
+            }}
+          >
+            <Text style={styles.playButton}>
+              {status.playing ? "⏸ Pause" : "▶ Play"}
+            </Text>
+          </Pressable>
+        )}
 
         <Text style={styles.emptyText}>
           Add your downloaded songs to Spotibai.
@@ -98,5 +126,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
     textAlign: "center",
+  },
+
+  playButton: {
+    color: "#1DB954",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginTop: 15,
   },
 });
